@@ -1,10 +1,15 @@
 import type { BloodPressureMeasurement } from '../domain/measurement'
-import { toDateInputValue } from '../format'
-import { NUMERIC_COLUMNS, buildPdfContent, type PdfOptions } from './pdfContent'
+import { formatDate, formatTime, toDateInputValue } from '../format'
+
+export interface PdfOptions {
+  patientName?: string
+  generatedAt?: Date
+}
 
 /** Genera el PDF de forma síncrona (una vez cargada la librería). */
 export type PdfGenerator = (measurements: BloodPressureMeasurement[], options?: PdfOptions) => Blob
 
+const TITLE = 'Registro de tensión arterial'
 const MARGIN = 15 // mm
 
 /**
@@ -15,42 +20,51 @@ const MARGIN = 15 // mm
 export async function loadPdfGenerator(): Promise<PdfGenerator> {
   const [{ jsPDF }, { autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
 
-  return (measurements, options) => {
-    const content = buildPdfContent(measurements, options)
+  return (measurements, { patientName, generatedAt = new Date() } = {}) => {
+    // Orden cronológico ascendente: es como se lee la evolución en consulta.
+    const rows = [...measurements].sort((a, b) => a.measuredAt.getTime() - b.measuredAt.getTime())
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
 
-    doc.setProperties({ title: content.patientName ? `${content.title} · ${content.patientName}` : content.title })
+    doc.setProperties({ title: patientName ? `${TITLE} · ${patientName}` : TITLE })
 
     let y = MARGIN + 4
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(16)
-    doc.text(content.title, MARGIN, y)
+    doc.text(TITLE, MARGIN, y)
 
     doc.setFontSize(10)
     y += 8
-    if (content.patientName) {
+    if (patientName) {
       doc.text('Paciente:', MARGIN, y)
       doc.setFont('helvetica', 'normal')
-      doc.text(content.patientName, MARGIN + 18, y)
+      doc.text(patientName, MARGIN + 18, y)
       y += 5.5
     }
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(70)
-    if (content.period) {
-      doc.text(`Periodo: ${content.period}`, MARGIN, y)
+    if (rows.length > 0) {
+      const period = `${formatDate(rows[0].measuredAt)} – ${formatDate(rows[rows.length - 1].measuredAt)}`
+      const count = rows.length === 1 ? '1 medición' : `${rows.length} mediciones`
+      doc.text(`Periodo: ${period} · ${count}`, MARGIN, y)
       y += 5.5
     }
-    doc.text(content.generated, MARGIN, y)
+    doc.text(`Generado el ${formatDate(generatedAt)}`, MARGIN, y)
     doc.setTextColor(0)
 
     autoTable(doc, {
       startY: y + 6,
       margin: { left: MARGIN, right: MARGIN, top: MARGIN, bottom: MARGIN + 6 },
-      // En el PDF la unidad va en una segunda línea de la cabecera.
-      head: [content.head.map((h) => h.replace(' (', '\n('))],
-      body: content.rows,
+      head: [['Fecha', 'Hora', 'Sistólica\n(mmHg)', 'Diastólica\n(mmHg)', 'Pulso\n(ppm)', 'Observaciones']],
+      body: rows.map((m) => [
+        formatDate(m.measuredAt),
+        formatTime(m.measuredAt),
+        String(m.systolic),
+        String(m.diastolic),
+        String(m.pulse),
+        m.notes ?? '',
+      ]),
       theme: 'plain',
       styles: { font: 'helvetica', fontSize: 9.5, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, textColor: 20 },
       headStyles: { fontStyle: 'bold', fillColor: [235, 238, 241], valign: 'bottom' },
@@ -64,7 +78,7 @@ export async function loadPdfGenerator(): Promise<PdfGenerator> {
         5: { cellWidth: 'auto' },
       },
       didParseCell: ({ section, column, cell }) => {
-        if (section === 'head' && NUMERIC_COLUMNS.includes(column.index)) cell.styles.halign = 'right'
+        if (section === 'head' && column.index >= 2 && column.index <= 4) cell.styles.halign = 'right'
       },
     })
 
@@ -73,7 +87,7 @@ export async function loadPdfGenerator(): Promise<PdfGenerator> {
     doc.setTextColor(110)
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i)
-      doc.text(content.title, MARGIN, pageHeight - MARGIN + 2)
+      doc.text(TITLE, MARGIN, pageHeight - MARGIN + 2)
       doc.text(`Página ${i} de ${pages}`, pageWidth - MARGIN, pageHeight - MARGIN + 2, { align: 'right' })
     }
 

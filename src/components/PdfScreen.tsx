@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { settings } from '../data'
 import type { BloodPressureMeasurement } from '../domain/measurement'
+import { formatDate } from '../format'
 import { loadPdfGenerator, pdfFileName, type PdfGenerator } from '../pdf/exportPdf'
-import { buildPdfContent } from '../pdf/pdfContent'
 import { shareOrDownloadPdf } from '../pdf/sharePdf'
 import { BackIcon } from './icons'
-import { PdfPreview } from './PdfPreview'
 
 interface Props {
   measurements: BloodPressureMeasurement[]
@@ -25,7 +24,8 @@ export function PdfScreen({ measurements, onBack, notify }: Props) {
       .catch(() => setLoadFailed(true))
   }, [])
 
-  const content = buildPdfContent(measurements, { patientName: name })
+  const oldest = measurements[measurements.length - 1]
+  const newest = measurements[0]
 
   function changeName(value: string) {
     setName(value)
@@ -53,6 +53,15 @@ export function PdfScreen({ measurements, onBack, notify }: Props) {
         <span />
       </div>
 
+      <div className="card pdf-summary">
+        <div className="lbl">Contenido</div>
+        <p>
+          {measurements.length === 1 ? '1 medición' : `${measurements.length} mediciones`}
+          {oldest && ` · del ${formatDate(oldest.measuredAt)} al ${formatDate(newest.measuredAt)}`}
+        </p>
+        <p className="hint">Tabla con fecha, hora, sistólica, diastólica, pulso y observaciones, de la más antigua a la más reciente.</p>
+      </div>
+
       <div className="card name-field">
         <label htmlFor="patient-name">
           Nombre del paciente <small>(opcional)</small>
@@ -78,12 +87,6 @@ export function PdfScreen({ measurements, onBack, notify }: Props) {
           {generator ? 'COMPARTIR PDF' : 'Preparando…'}
         </button>
       )}
-
-      <div className="section-h">
-        <h2>Vista previa</h2>
-      </div>
-      <PdfPreview content={content} />
-      <p className="hint">El PDF se divide en páginas A4 numeradas y la cabecera de la tabla se repite en cada página.</p>
     </div>
   )
 }

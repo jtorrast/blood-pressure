@@ -487,81 +487,28 @@ h1 {
 }
 
 /* ---------- PDF ---------- */
-.screen > .section-h {
-  margin-top: 12px;
-}
-
-.hint {
-  margin: 0;
-  padding-inline: 4px;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-/* Hoja de la vista previa: blanca y con tipografía de documento, como el PDF. */
-.paper {
-  padding: 18px 10px;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #1a1a1a;
-  box-shadow: 0 2px 10px rgba(20, 33, 43, 0.15);
-  font-family: Helvetica, Arial, sans-serif;
-  overflow-x: auto;
-}
-
-.paper h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.paper-meta {
+.pdf-summary {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 14px;
-  font-size: 13px;
-  color: #464646;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 14px 16px;
 }
 
-.paper-meta b {
-  color: #1a1a1a;
-}
-
-.paper table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
+.pdf-summary p {
+  margin: 0;
   font-variant-numeric: tabular-nums;
 }
 
-.paper th {
-  padding: 5px 3px;
-  background: #ebeef1;
-  text-align: left;
-  vertical-align: bottom;
-  font-weight: 700;
-}
-
-.paper td {
-  padding: 5px 3px;
-  overflow-wrap: anywhere;
-  border-bottom: 1px solid #c8c8c8;
-  vertical-align: top;
-}
-
-.paper .n {
-  text-align: right;
-}
-
-.paper td:nth-child(-n + 5) {
-  white-space: nowrap;
+.pdf-summary .hint {
+  font-size: 14px;
+  color: var(--muted);
 }
 
 .name-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 12px;
   padding: 12px 16px 16px;
 }
 
