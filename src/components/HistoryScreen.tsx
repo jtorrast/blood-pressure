@@ -6,6 +6,7 @@ import { MeasurementList } from './MeasurementList'
 interface Props {
   measurements: BloodPressureMeasurement[]
   onBack: () => void
+  onOpenPdf: () => void
   onSelect: (measurement: BloodPressureMeasurement) => void
 }
 
@@ -21,7 +22,7 @@ function groupByDay(list: BloodPressureMeasurement[]) {
   return groups
 }
 
-export function HistoryScreen({ measurements, onBack, onSelect }: Props) {
+export function HistoryScreen({ measurements, onBack, onOpenPdf, onSelect }: Props) {
   const newest = measurements[0]
   const oldest = measurements[measurements.length - 1]
 
@@ -51,6 +52,11 @@ export function HistoryScreen({ measurements, onBack, onSelect }: Props) {
               <MeasurementList measurements={g.items} showDate={false} onSelect={onSelect} />
             </section>
           ))}
+          <div className="bottom-bar">
+            <button className="btn primary" type="button" onClick={onOpenPdf}>
+              GENERAR PDF
+            </button>
+          </div>
         </>
       )}
     </div>
