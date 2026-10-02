@@ -6,4 +6,5 @@ export const measurementRepository: MeasurementRepository = createIndexedDbRepos
 
 export type { MeasurementRepository }
 export { requestPersistentStorage } from './indexedDbRepository'
-export { settings } from './settings'
+export { BACKUP_EVERY, settings } from './settings'
+export { createBackupFile, InvalidBackupError, parseBackup } from './backup'

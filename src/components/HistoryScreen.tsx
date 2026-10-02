@@ -1,5 +1,6 @@
 import type { BloodPressureMeasurement } from '../domain/measurement'
 import { formatLongDay, formatMediumDate } from '../format'
+import { BackupSection } from './BackupSection'
 import { BackIcon } from './icons'
 import { MeasurementList } from './MeasurementList'
 
@@ -8,6 +9,9 @@ interface Props {
   onBack: () => void
   onOpenPdf: () => void
   onSelect: (measurement: BloodPressureMeasurement) => void
+  lastBackupAt: Date | null
+  onBackup: () => void
+  onRestore: (file: File) => void
 }
 
 /** Agrupa por día manteniendo el orden recibido (más reciente primero). */
@@ -22,7 +26,7 @@ function groupByDay(list: BloodPressureMeasurement[]) {
   return groups
 }
 
-export function HistoryScreen({ measurements, onBack, onOpenPdf, onSelect }: Props) {
+export function HistoryScreen({ measurements, onBack, onOpenPdf, onSelect, lastBackupAt, onBackup, onRestore }: Props) {
   const newest = measurements[0]
   const oldest = measurements[measurements.length - 1]
 
@@ -59,6 +63,13 @@ export function HistoryScreen({ measurements, onBack, onOpenPdf, onSelect }: Pro
           </div>
         </>
       )}
+
+      <BackupSection
+        hasMeasurements={measurements.length > 0}
+        lastBackupAt={lastBackupAt}
+        onBackup={onBackup}
+        onRestore={onRestore}
+      />
     </div>
   )
 }

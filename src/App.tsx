@@ -1,19 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { BackupDialog } from './components/BackupDialog'
 import { EditSheet } from './components/EditSheet'
 import { HistoryScreen } from './components/HistoryScreen'
 import { MeasurementList } from './components/MeasurementList'
 import { NewMeasurementForm } from './components/NewMeasurementForm'
 import { PdfScreen } from './components/PdfScreen'
 import { Toast } from './components/Toast'
+import { createBackupFile, InvalidBackupError, parseBackup, settings } from './data'
 import type { BloodPressureMeasurement } from './domain/measurement'
+import { shareOrDownloadFile } from './shareFile'
 import { useMeasurements } from './useMeasurements'
 
 const RECENT_COUNT = 3
 
 export default function App() {
-  const { measurements, loadError, save, remove } = useMeasurements()
+  const { measurements, loadError, save, remove, restore } = useMeasurements()
   const [screen, setScreen] = useState<'main' | 'history' | 'pdf'>('main')
   const [editing, setEditing] = useState<BloodPressureMeasurement | null>(null)
+  const [askBackup, setAskBackup] = useState(false)
+  const [lastBackupAt, setLastBackupAt] = useState(settings.getLastBackupAt)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null)
 
   const notify = useCallback((text: string) => setToast({ id: Date.now(), text }), [])
@@ -56,6 +61,7 @@ export default function App() {
     try {
       await save(m)
       notify(`Medición guardada · ${m.systolic}/${m.diastolic}, ${m.pulse} ppm`)
+      if (settings.countNewMeasurement()) setAskBackup(true)
       return true
     } catch {
       notify('No se pudo guardar. Inténtalo de nuevo.')
@@ -83,6 +89,36 @@ export default function App() {
     }
   }
 
+  // Se llama directamente desde el toque del usuario: iOS solo abre el menú Compartir así.
+  async function handleBackup() {
+    if (!measurements?.length) return
+    try {
+      const { blob, fileName } = createBackupFile(measurements)
+      const result = await shareOrDownloadFile(blob, fileName, 'Copia de seguridad · Tensión arterial')
+      if (result === 'cancelled') return
+      settings.markBackupDone()
+      setLastBackupAt(settings.getLastBackupAt())
+      notify(result === 'downloaded' ? 'Copia guardada en Descargas' : 'Copia de seguridad lista')
+    } catch {
+      notify('No se pudo hacer la copia. Inténtalo de nuevo.')
+    }
+  }
+
+  function closeBackupDialog(dontAskAgain: boolean) {
+    if (dontAskAgain) settings.setBackupReminderOn(false)
+    setAskBackup(false)
+  }
+
+  async function handleRestore(file: File) {
+    try {
+      const added = await restore(parseBackup(await file.text()))
+      if (added === 0) notify('Todas las mediciones de la copia ya estaban guardadas')
+      else notify(added === 1 ? 'Se ha recuperado 1 medición' : `Se han recuperado ${added} mediciones`)
+    } catch (error) {
+      notify(error instanceof InvalidBackupError ? error.message : 'No se pudo restaurar la copia. Inténtalo de nuevo.')
+    }
+  }
+
   const list = measurements ?? []
 
   return (
@@ -98,6 +134,9 @@ export default function App() {
             onBack={goBack}
             onOpenPdf={() => openScreen('pdf')}
             onSelect={openEdit}
+            lastBackupAt={lastBackupAt}
+            onBackup={handleBackup}
+            onRestore={handleRestore}
           />
         </main>
       ) : (
@@ -136,6 +175,16 @@ export default function App() {
           onSave={handleUpdate}
           onDelete={handleDelete}
           onClose={goBack}
+        />
+      )}
+
+      {askBackup && (
+        <BackupDialog
+          onBackup={(dontAskAgain) => {
+            closeBackupDialog(dontAskAgain)
+            void handleBackup()
+          }}
+          onDismiss={closeBackupDialog}
         />
       )}
 

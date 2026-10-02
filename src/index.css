@@ -539,6 +539,53 @@ h1 {
   background: var(--surface);
 }
 
+/* ---------- Copia de seguridad ---------- */
+.backup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px 16px 16px;
+}
+
+.backup h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.backup .hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.backup-actions .btn {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 /* ---------- Panel de edición y diálogo ---------- */
 .backdrop {
   position: fixed;
@@ -649,6 +696,10 @@ h1 {
   transform: translateX(-50%);
   pointer-events: none;
   animation: toast 2.6s ease both;
+}
+
+.app:has(.bottom-bar) ~ .toast {
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
 }
 
 @keyframes toast {

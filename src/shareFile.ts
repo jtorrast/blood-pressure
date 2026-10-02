@@ -1,16 +1,17 @@
 export type ShareResult = 'shared' | 'downloaded' | 'cancelled'
 
 /**
- * Abre el menú Compartir del sistema con el PDF (iOS 15+, Android Chrome).
- * Si el navegador no permite compartir archivos, lo descarga.
+ * Abre el menú Compartir del sistema con el archivo (iOS 15+, Android Chrome).
+ * Si el navegador no permite compartir ese tipo de archivo, lo descarga
+ * (en Android, a la carpeta Descargas).
  * Debe llamarse directamente desde el gesto del usuario (un toque), sin esperas previas.
  */
-export async function shareOrDownloadPdf(blob: Blob, fileName: string): Promise<ShareResult> {
-  const file = new File([blob], fileName, { type: 'application/pdf' })
+export async function shareOrDownloadFile(blob: Blob, fileName: string, title: string): Promise<ShareResult> {
+  const file = new File([blob], fileName, { type: blob.type })
 
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'Registro de tensión arterial' })
+      await navigator.share({ files: [file], title })
       return 'shared'
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'

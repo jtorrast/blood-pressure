@@ -34,5 +34,17 @@ export function useMeasurements(repository: MeasurementRepository = measurementR
     [repository, reload],
   )
 
-  return { measurements, loadError, save, remove }
+  /** Añade las mediciones de una copia que no estén ya guardadas (las existentes no se tocan). Devuelve cuántas añadió. */
+  const restore = useCallback(
+    async (fromBackup: BloodPressureMeasurement[]) => {
+      const existing = new Set((await repository.list()).map((m) => m.id))
+      const missing = fromBackup.filter((m) => !existing.has(m.id))
+      for (const m of missing) await repository.save(m)
+      await reload()
+      return missing.length
+    },
+    [repository, reload],
+  )
+
+  return { measurements, loadError, save, remove, restore }
 }

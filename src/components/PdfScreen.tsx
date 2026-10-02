@@ -3,7 +3,7 @@ import { settings } from '../data'
 import type { BloodPressureMeasurement } from '../domain/measurement'
 import { formatDate } from '../format'
 import { loadPdfGenerator, pdfFileName, type PdfGenerator } from '../pdf/exportPdf'
-import { shareOrDownloadPdf } from '../pdf/sharePdf'
+import { shareOrDownloadFile } from '../shareFile'
 import { BackIcon } from './icons'
 
 interface Props {
@@ -36,7 +36,7 @@ export function PdfScreen({ measurements, onBack, notify }: Props) {
     if (!generator) return
     try {
       const blob = generator(measurements, { patientName: name.trim() || undefined })
-      const result = await shareOrDownloadPdf(blob, pdfFileName())
+      const result = await shareOrDownloadFile(blob, pdfFileName(), 'Registro de tensión arterial')
       if (result === 'downloaded') notify('PDF descargado')
     } catch {
       notify('No se pudo generar el PDF. Inténtalo de nuevo.')
